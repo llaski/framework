@@ -160,6 +160,41 @@ class ValidationValidatorTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($v->passes());
 	}
 
+	public function testRequiredWithMultiple()
+	{
+		$trans = $this->getRealTranslator();
+
+		$rules = array(
+			'f1' => 'required_with:f2,f3',
+			'f2' => 'required_with:f1,f3',
+			'f3' => 'required_with:f1,f2',
+		);
+
+		$v = new Validator($trans, array(), $rules);
+		$this->assertTrue($v->passes());
+
+		$v = new Validator($trans, array('f1' => 'foo'), $rules);
+		$this->assertTrue($v->passes());
+
+		$v = new Validator($trans, array('f2' => 'foo'), $rules);
+		$this->assertTrue($v->passes());
+
+		$v = new Validator($trans, array('f3' => 'foo'), $rules);
+		$this->assertTrue($v->passes());
+
+		$v = new Validator($trans, array('f1' => 'foo', 'f2' => 'bar'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f1' => 'foo', 'f3' => 'bar'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f2' => 'foo', 'f3' => 'bar'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f1' => 'foo', 'f2' => 'bar', 'f3' => 'baz'), $rules);
+		$this->assertTrue($v->passes());
+	}
+
 	public function testValidateRequiredWithout()
 	{
 		$trans = $this->getRealTranslator();
