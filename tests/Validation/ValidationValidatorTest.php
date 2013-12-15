@@ -195,6 +195,74 @@ class ValidationValidatorTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue($v->passes());
 	}
 
+	public function testValidateRequiredWithAny()
+	{
+		$trans = $this->getRealTranslator();
+		$v = new Validator($trans, array('first' => 'Taylor'), array('last' => 'required_with_any:first'));
+		$this->assertFalse($v->passes());
+
+		$v = new Validator($trans, array('first' => 'Taylor', 'last' => ''), array('last' => 'required_with_any:first'));
+		$this->assertFalse($v->passes());
+
+		$v = new Validator($trans, array('first' => ''), array('last' => 'required_with_any:first'));
+		$this->assertTrue($v->passes());
+
+		$v = new Validator($trans, array(), array('last' => 'required_with_any:first'));
+		$this->assertTrue($v->passes());
+
+		$v = new Validator($trans, array('first' => 'Taylor', 'last' => 'Otwell'), array('last' => 'required_with_any:first'));
+		$this->assertTrue($v->passes());
+
+		$file = new File('', false);
+		$v = new Validator($trans, array('file' => $file, 'foo' => ''), array('foo' => 'required_with_any:file'));
+		$this->assertTrue($v->passes());
+
+		$file = new File(__FILE__, false);
+		$foo  = new File(__FILE__, false);
+		$v = new Validator($trans, array('file' => $file, 'foo' => $foo), array('foo' => 'required_with_any:file'));
+		$this->assertTrue($v->passes());
+
+		$file = new File(__FILE__, false);
+		$foo  = new File('', false);
+		$v = new Validator($trans, array('file' => $file, 'foo' => $foo), array('foo' => 'required_with_any:file'));
+		$this->assertFalse($v->passes());
+	}
+
+	public function testValidateRequiredWithAnyMultiple()
+	{
+		$trans = $this->getRealTranslator();
+
+		$rules = array(
+			'f1' => 'required_with_any:f2,f3',
+			'f2' => 'required_with_any:f1,f3',
+			'f3' => 'required_with_any:f1,f2',
+		);
+
+		$v = new Validator($trans, array(), $rules);
+		$this->assertTrue($v->passes());
+
+		$v = new Validator($trans, array('f1' => 'foo'), $rules);
+		$this->assertFalse($v->passes());
+
+		$v = new Validator($trans, array('f2' => 'foo'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f3' => 'foo'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f1' => 'foo', 'f2' => 'bar'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f1' => 'foo', 'f3' => 'bar'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f2' => 'foo', 'f3' => 'bar'), $rules);
+		$this->assertTrue($v->fails());
+
+		$v = new Validator($trans, array('f1' => 'foo', 'f2' => 'bar', 'f3' => 'baz'), $rules);
+		$this->assertTrue($v->passes());
+	}
+
 	public function testValidateRequiredWithout()
 	{
 		$trans = $this->getRealTranslator();
